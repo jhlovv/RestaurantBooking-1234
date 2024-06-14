@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
 
 from booking_scheduler import BookingScheduler
@@ -7,8 +8,10 @@ from test_communication import TestSmsSender, TestMailSender
 
 NOT_ON_THE_HOUR = datetime.strptime("2021/03/26 09:05", "%Y/%m/%d %H:%M")
 ON_THE_HOUR = datetime.strptime("2021/03/26 09:00", "%Y/%m/%d %H:%M")
-CUSTOMER = Customer("FAKE NAME", "010-2824-3421")
-CUSTOMER_WITH_MAIL = Customer("FAKE NAME", "010-2824-3421", "test@test.com")
+CUSTOMER = Mock()
+CUSTOMER.get_email.return_value = None
+CUSTOMER_WITH_MAIL = Mock()
+CUSTOMER_WITH_MAIL.get_email.return_value = "test@test.com"
 
 UNDER_CAPACITY = 3
 CAPACITY_PER_HOUR = 3
