@@ -8,6 +8,7 @@ from test_communication import TestSmsSender, TestMailSender
 NOT_ON_THE_HOUR = datetime.strptime("2021/03/26 09:05", "%Y/%m/%d %H:%M")
 ON_THE_HOUR = datetime.strptime("2021/03/26 09:00", "%Y/%m/%d %H:%M")
 CUSTOMER = Customer("FAKE NAME", "010-2824-3421")
+CUSTOMER_WITH_MAIL = Customer("FAKE NAME", "010-2824-3421", "test@test.com")
 
 UNDER_CAPACITY = 3
 CAPACITY_PER_HOUR = 3
@@ -17,6 +18,8 @@ class BookingSchedulerTest(unittest.TestCase):
         self.booking_scheduler = BookingScheduler(CAPACITY_PER_HOUR)
         self.testable_sms_sender = TestSmsSender()
         self.booking_scheduler.set_sms_sender(self.testable_sms_sender)
+        self.test_mail_sender = TestMailSender()
+        self.booking_scheduler.set_mail_sender(self.test_mail_sender)
     def test_예약은_정시에만_가능하다_정시가_아닌경우_예약불가(self):
         schedule = Schedule(NOT_ON_THE_HOUR, UNDER_CAPACITY, CUSTOMER)
 
@@ -52,28 +55,18 @@ class BookingSchedulerTest(unittest.TestCase):
         self.assertTrue(self.booking_scheduler.has_schedule(new_schedule))
     def test_예약완료시_SMS는_무조건_발송(self):
         schedule = Schedule(ON_THE_HOUR, UNDER_CAPACITY, CUSTOMER)
-
         self.booking_scheduler.add_schedule(schedule)
-
         self.assertTrue(self.testable_sms_sender.is_send_method_is_called())
+
     def test_이메일이_없는_경우에는_이메일_미발송(self):
-        testable_mail_sender = TestMailSender()
         schedule = Schedule(ON_THE_HOUR, CAPACITY_PER_HOUR, CUSTOMER)
-        self.booking_scheduler.set_mail_sender(testable_mail_sender)
-
         self.booking_scheduler.add_schedule(schedule)
+        self.assertEqual(self.test_mail_sender.get_count_send_mail_is_called(), 0)
 
-        self.assertEqual(testable_mail_sender.get_count_send_mail_is_called(), 0)
     def test_이메일이_있는_경우에는_이메일_발송(self):
-        customer_with_mail = Customer("FAKE NAME", "010-2824-3421", "test@test.com")
-        testable_mail_sender = TestMailSender()
-        schedule = Schedule(ON_THE_HOUR, CAPACITY_PER_HOUR, customer_with_mail)
-        self.booking_scheduler.set_mail_sender(testable_mail_sender)
-
+        schedule = Schedule(ON_THE_HOUR, CAPACITY_PER_HOUR, CUSTOMER_WITH_MAIL)
         self.booking_scheduler.add_schedule(schedule)
-
-        self.assertEqual(testable_mail_sender.get_count_send_mail_is_called(), 1)
-
+        self.assertEqual(self.test_mail_sender.get_count_send_mail_is_called(), 1)
 
     def test_현재날짜가_일요일인_경우_예약불가_예외처리(self):
         pass
