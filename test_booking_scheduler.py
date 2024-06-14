@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 from booking_scheduler import BookingScheduler
 from schedule import Customer, Schedule
-from test_communication import TestSmsSender, TestMailSender
 
 NOT_ON_THE_HOUR = datetime.strptime("2021/03/26 09:05", "%Y/%m/%d %H:%M")
 ON_THE_HOUR = datetime.strptime("2021/03/26 09:00", "%Y/%m/%d %H:%M")
@@ -28,9 +27,9 @@ class BookingSchedulerTest(unittest.TestCase):
 
     def setUp(self):
         self.booking_scheduler = BookingScheduler(CAPACITY_PER_HOUR)
-        self.testable_sms_sender = TestSmsSender()
+        self.testable_sms_sender = Mock()
         self.booking_scheduler.set_sms_sender(self.testable_sms_sender)
-        self.test_mail_sender = TestMailSender()
+        self.test_mail_sender = Mock()
         self.booking_scheduler.set_mail_sender(self.test_mail_sender)
     def test_예약은_정시에만_가능하다_정시가_아닌경우_예약불가(self):
         schedule = Schedule(NOT_ON_THE_HOUR, UNDER_CAPACITY, CUSTOMER)
@@ -68,17 +67,15 @@ class BookingSchedulerTest(unittest.TestCase):
     def test_예약완료시_SMS는_무조건_발송(self):
         schedule = Schedule(ON_THE_HOUR, UNDER_CAPACITY, CUSTOMER)
         self.booking_scheduler.add_schedule(schedule)
-        self.assertTrue(self.testable_sms_sender.is_send_method_is_called())
-
+        self.testable_sms_sender.send.assert_called()
     def test_이메일이_없는_경우에는_이메일_미발송(self):
         schedule = Schedule(ON_THE_HOUR, CAPACITY_PER_HOUR, CUSTOMER)
         self.booking_scheduler.add_schedule(schedule)
-        self.assertEqual(self.test_mail_sender.get_count_send_mail_is_called(), 0)
-
+        self.test_mail_sender.send_mail.assert_not_called()
     def test_이메일이_있는_경우에는_이메일_발송(self):
         schedule = Schedule(ON_THE_HOUR, CAPACITY_PER_HOUR, CUSTOMER_WITH_MAIL)
         self.booking_scheduler.add_schedule(schedule)
-        self.assertEqual(self.test_mail_sender.get_count_send_mail_is_called(), 1)
+        self.test_mail_sender.send_mail.assert_called_once()
 
     def test_현재날짜가_일요일인_경우_예약불가_예외처리(self):
         self.booking_scheduler = TestScheduler(CAPACITY_PER_HOUR, "2021/03/28 09:00")
