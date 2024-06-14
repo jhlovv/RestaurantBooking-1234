@@ -12,6 +12,23 @@ CUSTOMER_WITH_MAIL = Customer("FAKE NAME", "010-2824-3421", "test@test.com")
 
 UNDER_CAPACITY = 3
 CAPACITY_PER_HOUR = 3
+
+class SundayBookingScheduler(BookingScheduler):
+    def __init__(self, capacity_per_hour):
+        super().__init__(capacity_per_hour)
+
+    def get_now(self):
+        return datetime.strptime("2021/03/28 09:00", "%Y/%m/%d %H:%M")
+
+
+class MondayBookingScheduler(BookingScheduler):
+    def __init__(self, capacity_per_hour):
+        super().__init__(capacity_per_hour)
+
+    def get_now(self):
+        return datetime.strptime("2021/03/26 09:00", "%Y/%m/%d %H:%M")
+
+
 class BookingSchedulerTest(unittest.TestCase):
 
     def setUp(self):
@@ -39,7 +56,7 @@ class BookingSchedulerTest(unittest.TestCase):
 
         with self.assertRaises(ValueError) as context:
             new_schedule = Schedule(ON_THE_HOUR, UNDER_CAPACITY, CUSTOMER)
-            self.booking_scheduler.add_schedule(schedule)
+            self.booking_scheduler.add_schedule(new_schedule)
 
         self.assertEqual("Number of people is over restaurant capacity per hour", str(context.exception))
 
@@ -69,10 +86,21 @@ class BookingSchedulerTest(unittest.TestCase):
         self.assertEqual(self.test_mail_sender.get_count_send_mail_is_called(), 1)
 
     def test_현재날짜가_일요일인_경우_예약불가_예외처리(self):
-        pass
+        self.booking_scheduler = SundayBookingScheduler(CAPACITY_PER_HOUR)
+
+        with self.assertRaises(ValueError) as context:
+            new_schedule = Schedule(ON_THE_HOUR, UNDER_CAPACITY, CUSTOMER)
+            self.booking_scheduler.add_schedule(new_schedule)
+            self.fail()
+
+        self.assertEqual("Booking system is not available on Sunday", str(context.exception))
+
 
     def test_현재날짜가_일요일이_아닌경우_예약가능(self):
-        pass
+        self.booking_scheduler = MondayBookingScheduler(CAPACITY_PER_HOUR)
+        new_schedule = Schedule(ON_THE_HOUR, UNDER_CAPACITY, CUSTOMER)
+        self.booking_scheduler.add_schedule(new_schedule)
+        self.assertTrue(self.booking_scheduler.has_schedule(new_schedule))
 
 
 if __name__ == '__main__':
